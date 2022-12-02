@@ -1,6 +1,4 @@
-const long interval = 10;
 #include <Servo.h>
-
 
 const int Bup = 3;
 const int Bdown = 2;
@@ -10,6 +8,9 @@ const int Aup = 5;
 const int Adown = 4;
 const int PWMA = 6;
 
+const int switchPin = 8;
+const int ledPin = 9;
+
 // Muuttujat valosensoria varten
 const int sensor0 = A0;
 const int sensor1 = A1;
@@ -18,10 +19,6 @@ const int sensor3 = A3;
 const int sensor4 = A4;
 const int sensor5 = A5;
 
-
-// Moottoreihin liittyvä määritys
-//unsigned long int timeA = millis();
-//unsigned long int timeB = millis();
 
 // Lukuvektorin koko
 const int numReadings = 25;
@@ -47,7 +44,7 @@ void setup(){
 
 
 
-//Kaikki pinit ulossyöttöjä
+//Pinien määrittely
 
  pinMode(Aup, OUTPUT);
  pinMode(Adown, OUTPUT);
@@ -56,6 +53,9 @@ void setup(){
  pinMode(Bup, OUTPUT);
  pinMode(Bdown, OUTPUT);
  pinMode(PWMB, OUTPUT);
+
+ pinMode(switchPin, INPUT);
+ pinMode(ledPin, OUTPUT);
 
  // initialize serial communication with computer:
  Serial.begin(9600);
@@ -78,11 +78,7 @@ void setup(){
 	digitalWrite(Bup, LOW);
 	digitalWrite(Bdown, LOW);
 	analogWrite(PWMB, 0);
-    
- 
- 
-
- }
+	}
  
  void eteenpainMotB(int nopeus) {
 
@@ -92,9 +88,7 @@ void setup(){
 	digitalWrite(Bup, HIGH);
 	digitalWrite(Bdown, LOW);
 	analogWrite(PWMB, nopeus);
-    
- 
- }
+	}
 
   void stopMoottorit() {
 	// A-moottori
@@ -128,11 +122,8 @@ void eteenpainMotAB(int nopeusA, int nopeusB) {
 	digitalWrite(Bup, LOW);
 	digitalWrite(Bdown, LOW);
 	analogWrite(PWMB, 0);
-    
- 
- 
-
- }
+	delay(150);
+	}
 
   void ballServo() {
 	static unsigned long lastTime = 0;
@@ -144,86 +135,75 @@ void eteenpainMotAB(int nopeusA, int nopeusB) {
 	state = 0;
 	lastTime = now;
 	myservo.write(90);
-  }
+	}
 
   else if ( now - lastTime > interval && state == 0) {
 	state = 1;
 	lastTime = now;
 	myservo.write(25);
-	Serial.println("Ampu");
+	}
     
   }
- }
 
     
  
 
 void loop() {
-  // Sensorien yhteisarvo
-  inputValue = (1*analogRead(sensor1)) + (0.5*analogRead(sensor2)) + (0*analogRead(sensor3)) + (-0.5*analogRead(sensor4)) + (-1*analogRead(sensor5));
+  // Sensorien painotettu summa, jolla toimenpiteet määritetään
+  inputValue = (1*analogRead(sensor1)) + (0.5*analogRead(sensor2)) + (-0.5*analogRead(sensor4)) + (-1*analogRead(sensor5));
 
 
- //Arvoista keskiarvon laskeminen
+ //Arvoista keskiarvon laskeminen mittauksen tasoittamiseksi
  
-   // subtract the last reading:
   total = total - readings[readIndex];
-  // read from the sensor:
   readings[readIndex] = inputValue;
-  // add the reading to the total:
   total = total + readings[readIndex];
-  // advance to the next position in the array:
   readIndex = readIndex + 1;
-
-  // if we're at the end of the array...
   if (readIndex >= numReadings) {
-	// ...wrap around to the beginning:
 	readIndex = 0;
   }
-
-  // calculate the average:
+  // Keskiarvo
   average = total / numReadings;
- 
- 
- if (average < -150) {
-	eteenpainMotA(250);
-	//myservo.write(90);
-	Serial.println("A");
- }
- 
- else if (average > 150) {
-	eteenpainMotB(250);
-	//myservo.write(90);
-	Serial.println("B");
-    
- }
 
- // Jos edessä paljon valoa
- else if ((analogRead(sensor3)-analogRead(sensor0) > 0)) {
-	eteenpainMotAB(255, 248);
-	ballServo();
-	Serial.println("AB");
 
+  // Ledi päälle/pois
+  if (average > -120 && average < 120 && (analogRead(sensor3)-analogRead(sensor0) > 10)) {
+	digitalWrite(ledPin, HIGH);
+  }
+  else {
+	digitalWrite(ledPin, LOW);
+  }
  
+ // Ajamisen suunta
+ 
+ if (average < -120) {
+	eteenpainMotA(230);
  }
 
- 
- else if ((analogRead(sensor3)-analogRead(sensor0) < -20)) {
+ else if (average > 120) {
+	eteenpainMotB(200);
+ }
+
+ // Jos edessä valoa
+ else if ((analogRead(sensor3)-analogRead(sensor0) > 20)) {
+	eteenpainMotAB(250, 155); // Eri nopeudet, koska robotin painopiste ei ole keskellä
+	if (digitalRead(switchPin)==HIGH) {
+  	ballServo();
+	}
+ }
+
+// Jos takana valoa
+ else if ((analogRead(sensor3)-analogRead(sensor0) < -50)) {
 	taaksepainMotA(200);
-	Serial.println("TaakseA");
-	delay(150);
  }
- 
+
+// Jos muut eivät toteudu, ei mene muuten kuin jos ei näy valoa missään
  else {
   stopMoottorit();
-  //myservo.write(90);
-  Serial.println("STOP");
  }
  
  
-
- //Serial.println(analogRead(sensor3)-analogRead(sensor0));
- Serial.println(average);
+ Serial.println(analogRead(sensor3)-analogRead(sensor0));
+ //Serial.println(average);
  
- 
- } 
-
+ }
