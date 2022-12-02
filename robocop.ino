@@ -1,4 +1,5 @@
-//define the two direction logic pins and the speed / PWMB pin
+
+#include <Servo.h>
 
 
 const int Bup = 3;
@@ -9,8 +10,9 @@ const int Aup = 5;
 const int Adown = 4;
 const int PWMA = 6;
 
-// muuttujat valosensoria varten
-const int sensor1= A1;
+// Muuttujat valosensoria varten
+const int sensor0 = A0;
+const int sensor1 = A1;
 const int sensor2 = A2;
 const int sensor3 = A3;
 const int sensor4 = A4;
@@ -21,7 +23,7 @@ const int sensor5 = A5;
 unsigned long int timeA = millis();
 unsigned long int timeB = millis();
 
-// Luettavien avojen määrä
+// Lukuvektorin koko
 const int numReadings = 25;
 
 int readings[numReadings];
@@ -31,10 +33,18 @@ int average = 0;
 
 int inputValue = 0;
 
+// Servon alustukset
+Servo myservo;
+
+#define servoPin 11
+
+int angle = 0;
+
 
 
 
 void setup(){
+
 
 
 //Kaikki pinit ulossyöttöjä
@@ -53,6 +63,9 @@ void setup(){
  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
    readings[thisReading] = 0;
   }
+
+ // Servo
+ myservo.attach(servoPin);
  
 }
 
@@ -140,8 +153,28 @@ void eteenpainMotAB(int nopeus) {
 	analogWrite(PWMB, nopeus);
     
   }
- }
+}
+
+  void ballServo() {
+	static unsigned long lastTime = 0;
+	const long interval = 500;
+	static bool state = 0;
+	unsigned long now = millis();
+
+  if ( now - lastTime >= interval && state == 1) {
+	state = 0;
+	lastTime = now;
+	myservo.write(90);
+  }
+
+  else if ( now - lastTime > interval && state == 0) {
+	state = 1;
+	lastTime = now;
+	myservo.write(0);
     
+  }
+ }
+
     
  
 
@@ -174,26 +207,34 @@ void loop() {
  
  if (average < -50) {
 	eteenpainMotA(255);
+	myservo.write(90);
 	Serial.println("A");
  }
  
  else if (average > 50) {
 	eteenpainMotB(255);
+	myservo.write(90);
 	Serial.println("B");
+    
  }
  
- else if (analogRead(sensor3) > 10) {
+ // Jos edessä enemmän valoa
+ else if ((analogRead(sensor3)-analogRead(sensor0) > 0)) {
 	eteenpainMotAB(255);
+	ballServo();
 	Serial.println("AB");
+    
  }
  
  else {
   stopMoottorit();
+  myservo.write(90);
+  Serial.println("STOP");
  }
  
  
 
- Serial.println(average);
+ Serial.println(analogRead(sensor3)-analogRead(sensor0));
  
  
  }
