@@ -1,4 +1,4 @@
-
+const long interval = 10;
 #include <Servo.h>
 
 
@@ -72,7 +72,7 @@ void setup(){
 
  void eteenpainMotA(int nopeus) {
   static unsigned long lastTime = 0;
-  const long interval = 10;
+  //const long interval = 10;
   static bool state = 0;
 
   unsigned long now = millis();
@@ -129,7 +129,7 @@ void setup(){
 	analogWrite(PWMB, 0);
   }
 
-void eteenpainMotAB(int nopeus) {
+void eteenpainMotAB(int nopeusA, int nopeusB) {
   static unsigned long lastTime = 0;
   const long interval = 10;
   static bool state = 0;
@@ -147,10 +147,10 @@ void eteenpainMotAB(int nopeus) {
 	lastTime = now;
 	digitalWrite(Aup, HIGH);
 	digitalWrite(Adown, LOW);
-	analogWrite(PWMA, nopeus);
+	analogWrite(PWMA, nopeusA);
 	digitalWrite(Bup, HIGH);
 	digitalWrite(Bdown, LOW);
-	analogWrite(PWMB, nopeus);
+	analogWrite(PWMB, nopeusB);
     
   }
 }
@@ -170,7 +170,8 @@ void eteenpainMotAB(int nopeus) {
   else if ( now - lastTime > interval && state == 0) {
 	state = 1;
 	lastTime = now;
-	myservo.write(0);
+	myservo.write(25);
+	Serial.println("Ampu");
     
   }
  }
@@ -205,22 +206,22 @@ void loop() {
  
 
  
- if (average < -50) {
+ if (average < -150) {
 	eteenpainMotA(255);
-	myservo.write(90);
+	//myservo.write(90);
 	Serial.println("A");
  }
  
- else if (average > 50) {
+ else if (average > 150) {
 	eteenpainMotB(255);
-	myservo.write(90);
+	//myservo.write(90);
 	Serial.println("B");
     
  }
  
  // Jos edessä enemmän valoa
  else if ((analogRead(sensor3)-analogRead(sensor0) > 0)) {
-	eteenpainMotAB(255);
+	eteenpainMotAB(255, 248);
 	ballServo();
 	Serial.println("AB");
     
@@ -228,14 +229,14 @@ void loop() {
  
  else {
   stopMoottorit();
-  myservo.write(90);
+  //myservo.write(90);
   Serial.println("STOP");
  }
  
  
 
- Serial.println(analogRead(sensor3)-analogRead(sensor0));
+ //Serial.println(analogRead(sensor3)-analogRead(sensor0));
  
  
- }
+ } 
 
