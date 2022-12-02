@@ -10,6 +10,11 @@ const int PWMA = 6;
 
 const int switchPin = 8;
 const int ledPin = 9;
+int ledState = LOW;
+bool extraState = 1;
+bool flag0 = 0;
+long lastTime2 = 0;
+
 
 // Muuttujat valosensoria varten
 const int sensor0 = A0;
@@ -145,7 +150,29 @@ void eteenpainMotAB(int nopeusA, int nopeusB) {
     
   }
 
+  void ledBlink() {
+  if(flag0 == 1 && extraState == 1) {
+    lastTime2 = millis();
+    ledState = HIGH;
+    extraState = 0;
+    flag0 = 0;
+  }
+
+  if(millis() - lastTime2 > 1000) {
+    ledState = LOW;
+    extraState = 1;
+  }
+
+  if(millis() - lastTime2 > 400) {
+    ledState = HIGH;
+  }
+  
+  if(millis() - lastTime2 > 250) {
+    ledState = LOW;
     
+  }
+}
+
  
 
 void loop() {
@@ -166,13 +193,6 @@ void loop() {
   average = total / numReadings;
 
 
-  // Ledi päälle/pois
-  if (average > -120 && average < 120 && (analogRead(sensor3)-analogRead(sensor0) > 10)) {
-	digitalWrite(ledPin, HIGH);
-  }
-  else {
-	digitalWrite(ledPin, LOW);
-  }
  
  // Ajamisen suunta
  
@@ -189,6 +209,7 @@ void loop() {
 	eteenpainMotAB(250, 155); // Eri nopeudet, koska robotin painopiste ei ole keskellä
 	if (digitalRead(switchPin)==HIGH) {
   	ballServo();
+flag0 = 1;
 	}
  }
 
@@ -202,8 +223,11 @@ void loop() {
   stopMoottorit();
  }
  
- 
+ ledBlink();
+ digitalWrite(ledPin, ledState);
+
  Serial.println(analogRead(sensor3)-analogRead(sensor0));
  //Serial.println(average);
  
  }
+
