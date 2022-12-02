@@ -20,8 +20,8 @@ const int sensor5 = A5;
 
 
 // Moottoreihin liittyvä määritys
-unsigned long int timeA = millis();
-unsigned long int timeB = millis();
+//unsigned long int timeA = millis();
+//unsigned long int timeB = millis();
 
 // Lukuvektorin koko
 const int numReadings = 25;
@@ -71,50 +71,29 @@ void setup(){
 
 
  void eteenpainMotA(int nopeus) {
-  static unsigned long lastTime = 0;
-  //const long interval = 10;
-  static bool state = 0;
 
-  unsigned long now = millis();
-  if ( now - lastTime >= interval && state == 1) {
-	state = 0;
-	lastTime = now;
-	stopMoottorit();
-  }
- 
-  else if ( now - lastTime > interval && state == 0) {
-	state = 1;
-	lastTime = now;
 	digitalWrite(Aup, HIGH);
 	digitalWrite(Adown, LOW);
 	analogWrite(PWMA, nopeus);
+	digitalWrite(Bup, LOW);
+	digitalWrite(Bdown, LOW);
+	analogWrite(PWMB, 0);
     
-  }
+ 
  
 
  }
  
  void eteenpainMotB(int nopeus) {
-  static unsigned long lastTime = 0;
-  const long interval = 10;
-  static bool state = 0;
 
-  unsigned long now = millis();
-
-  if ( now - lastTime >= interval && state == 1) {
-	state = 0;
-	lastTime = now;
-	stopMoottorit();
-  }
-
-  else if ( now - lastTime > interval && state == 0) {
-	state = 1;
-	lastTime = now;
+	digitalWrite(Aup, LOW);
+	digitalWrite(Adown, LOW);
+	analogWrite(PWMA, 0);
 	digitalWrite(Bup, HIGH);
 	digitalWrite(Bdown, LOW);
 	analogWrite(PWMB, nopeus);
     
-  }
+ 
  }
 
   void stopMoottorit() {
@@ -130,21 +109,7 @@ void setup(){
   }
 
 void eteenpainMotAB(int nopeusA, int nopeusB) {
-  static unsigned long lastTime = 0;
-  const long interval = 10;
-  static bool state = 0;
 
-  unsigned long now = millis();
-
-  if ( now - lastTime >= interval && state == 1) {
-	state = 0;
-	lastTime = now;
-	stopMoottorit();
-  }
-
-  else if ( now - lastTime > interval && state == 0) {
-	state = 1;
-	lastTime = now;
 	digitalWrite(Aup, HIGH);
 	digitalWrite(Adown, LOW);
 	analogWrite(PWMA, nopeusA);
@@ -153,11 +118,25 @@ void eteenpainMotAB(int nopeusA, int nopeusB) {
 	analogWrite(PWMB, nopeusB);
     
   }
-}
+
+
+ void taaksepainMotA(int nopeus) {
+
+	digitalWrite(Aup, LOW);
+	digitalWrite(Adown, HIGH);
+	analogWrite(PWMA, nopeus);
+	digitalWrite(Bup, LOW);
+	digitalWrite(Bdown, LOW);
+	analogWrite(PWMB, 0);
+    
+ 
+ 
+
+ }
 
   void ballServo() {
 	static unsigned long lastTime = 0;
-	const long interval = 500;
+	const long interval = 1500;
 	static bool state = 0;
 	unsigned long now = millis();
 
@@ -204,27 +183,34 @@ void loop() {
   // calculate the average:
   average = total / numReadings;
  
-
  
  if (average < -150) {
-	eteenpainMotA(255);
+	eteenpainMotA(250);
 	//myservo.write(90);
 	Serial.println("A");
  }
  
  else if (average > 150) {
-	eteenpainMotB(255);
+	eteenpainMotB(250);
 	//myservo.write(90);
 	Serial.println("B");
     
  }
- 
- // Jos edessä enemmän valoa
+
+ // Jos edessä paljon valoa
  else if ((analogRead(sensor3)-analogRead(sensor0) > 0)) {
 	eteenpainMotAB(255, 248);
 	ballServo();
 	Serial.println("AB");
-    
+
+ 
+ }
+
+ 
+ else if ((analogRead(sensor3)-analogRead(sensor0) < -20)) {
+	taaksepainMotA(200);
+	Serial.println("TaakseA");
+	delay(150);
  }
  
  else {
@@ -236,6 +222,7 @@ void loop() {
  
 
  //Serial.println(analogRead(sensor3)-analogRead(sensor0));
+ Serial.println(average);
  
  
  } 
